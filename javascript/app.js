@@ -30,8 +30,9 @@ function bootstrapSpotifySearch(){
       // Attach the callback for success 
       // (We could have used the success callback directly)
       spotifyQueryRequest.done(function (data) {
-        var artists = data.artists;
 
+        var artists = data.artists;
+ 
         // Clear the output area
         outputArea.html('');
 
@@ -39,7 +40,7 @@ function bootstrapSpotifySearch(){
         // Which contains the first 20 matching elements.
         // In our case they are artists.
         artists.items.forEach(function(artist){
-          var artistLi = $("<li>" + artist.name + " - " + artist.id + "</li>")
+          var artistLi = $("<li>" + artist.name + "</li>")
           artistLi.attr('data-spotify-id', artist.id);
           outputArea.append(artistLi);
 
@@ -58,11 +59,91 @@ function bootstrapSpotifySearch(){
 
 /* COMPLETE THIS FUNCTION! */
 function displayAlbumsAndTracks(event) {
-  var appendToMe = $('#albums-and-tracks');
+  //console.log();
 
-  // These two lines can be deleted. They're mostly for show. 
-  console.log("you clicked on:");
-  console.log($(event.target).attr('data-spotify-id'));//.attr('data-spotify-id'));
+  var spotifyAlbumQuery, spotifyAlbumQuery2, albumSearchUrl,  artistid;
+  var spotifyTrackQuery, trackSearchUrl, albumid; 
+  var appendToMe = $('#albums-and-tracks');
+  //var appendToMe2 = $('#data-spotify-id');
+  artistid = $(event.target).attr('data-spotify-id');
+  
+
+  // Query the Spotify API for every album produced by the artist you clicked on.
+  albumSearchUrl = "https://api.spotify.com/v1/artists/" + artistid + "/albums";
+
+
+  // Generate the request object
+  spotifyAlbumQuery = $.ajax({
+      type: "GET",
+      dataType: 'json', 
+      url: albumSearchUrl
+  });
+
+spotifyAlbumQuery.done(function (data) {
+    var albums = data;
+  
+    // Clear the output area
+    appendToMe.html('');
+
+    // The spotify API sends back an arrat 'items' 
+    // Which contains the first 20 matching elements.
+    // In our case they are artists.
+  albums.items.forEach(function(album){
+              var fullAlbumUrl = "https://api.spotify.com/v1/albums/" + album.id;
+
+              spotifyAlbumQuery2 = $.ajax({
+                 type: "GET",
+                dataType: 'json', 
+                url: fullAlbumUrl
+                });
+
+              spotifyAlbumQuery2.done(function (data2) {
+
+              var albumDate = data2;
+
+              var albumLi = $("<h4>"+ albumDate.name + "- EP Released (" + albumDate.release_date +")</h4>");
+              albumLi.attr('data-spotify-id', albumDate.id);
+              appendToMe.append(albumLi);
+              albumLi.click(displayAlbumsAndTracks);
+              });      
+                        spotifyAlbumQuery2.fail(function (error) {
+                        console.log("Something Failed During Spotify Q Request:")
+                        console.log(error);
+                      });                
+
+             // // For each of those albums fetch every track on the album.
+            trackSearchUrl = "https://api.spotify.com/v1/albums/" + album.id +"/tracks";
+
+            // Generate the request object
+            spotifyTrackQuery = $.ajax({
+                type: "GET",
+                dataType: 'json', 
+                url: trackSearchUrl 
+              });
+
+             spotifyTrackQuery.done(function (data3) {
+              var tracks = data3;
+
+              tracks.items.forEach(function(track){
+              var trackLi = $("<li>"+ track.name + "</li>");
+             
+              appendToMe.append(trackLi);
+             // albumLi.click(displayAlbumsAndTracks);
+              });      
+
+            });
+                     spotifyTrackQuery.fail(function (error) {
+                     console.log("Something Failed During Spotify Q Request:")
+                     console.log(error);
+                   });
+       });            
+       
+  });
+
+                  spotifyAlbumQuery.fail(function (error) {
+                  console.log("Something Failed During Spotify Q Request:")
+                  console.log(error);
+                });
 }
 
 /* YOU MAY WANT TO CREATE HELPER FUNCTIONS OF YOUR OWN */
